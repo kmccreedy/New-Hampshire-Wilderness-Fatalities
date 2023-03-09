@@ -1,0 +1,304 @@
+---title: "New Hampshire"
+output: pdf_document
+date: "2023-02-07"
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(corrplot)
+library(ech)
+library(lubridate)
+```
+
+```{r}
+library(readxl)
+library(readxl)
+data<- read_excel("new hampshire (5).xlsx",
+    col_types = c("numeric", "text", "numeric", 
+        "date", "text", "text", "text", "numeric", 
+        "text", "text", "text", "numeric"))
+```
+
+```{r}
+na.omit(data)
+
+data$Date <- ymd(data$Date)
+
+# Filter data for dates before and after March 2020
+before <- data %>% filter(year(Date) < 2020 | (year(Date) == 2020 & month(Date) < 3))
+after <- data %>% filter(year(Date) > 2020 | (year(Date) == 2020 & month(Date) >= 3))
+
+# Calculate average age for each group
+before_avg_age <- mean(before$Age)
+after_avg_age <- mean(after$Age)
+
+# Calculate p-value for difference in average age between groups
+p_value <- t.test(before$Age, after$Age, var.equal = FALSE)$p.value
+
+# Calculate p-value for difference in gender between groups
+p_value <- t.test(before$Gender, after$Gender, var.equal = FALSE)$p.value
+
+# Perform two-sample t-tests for male and female before and after March 2020
+male_before <- before %>% filter(Gender == "Male")
+male_after <- after %>% filter(Gender == "Male")
+female_before <- before %>% filter(Gender == "Female")
+female_after <- after %>% filter(Gender == "Female")
+
+male_ttest <- t.test(male_before$Age, male_after$Age, var.equal = FALSE)
+female_ttest <- t.test(female_before$Age, female_after$Age, var.equal = FALSE)
+
+# Check p-values for statistical significance
+male_ttest$p.value
+female_ttest$p.value
+if (male_ttest$p.value < 0.05) {
+  print("Male age had a statistically significant change before and after March 2020.")
+} else {
+  print("Male age did not have a statistically significant change before and after March 2020.")
+}
+
+if (female_ttest$p.value < 0.05) {
+  print("Female age had a statistically significant change before and after March 2020.")
+} else {
+  print("Female age did not have a statistically significant change before and after March 2020.")
+}
+
+
+
+
+# Group data by year and calculate average age
+age_by_year <- data %>% group_by(Year) %>% summarize(Avg_Age = mean(Age))
+
+# Create bar chart of average age by year
+ggplot(age_by_year, aes(x = Year, y = Avg_Age)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  ggtitle("Average Age by Year") +
+  xlab("Year") +
+  ylab("Average Age")
+```
+
+
+```{r}
+# Create new column indicating in-state or out-of-state residence
+data$Residence_State <- ifelse(data$Residence %in% c("New Hampshire", "NH"), "in-state", "out-of-state")
+
+# Filter data for before and after March 2020
+before <- data %>% filter(Year < 2020 | (Year == 2020 & Month < 3))
+after <- data %>% filter(Year > 2020 | (Year == 2020 & Month >= 3))
+
+instate_before <- before %>% filter(Residence_State == "in-state")
+instate_after <- after %>% filter(Residence_State == "in-state")
+outstate_before <- before %>% filter(Residence_State == "out-of-state")
+outstate_after <- after %>% filter(Residence_State == "out-of-state")
+
+instate_ttest <- t.test(instate_before$Age, instate_after$Age, var.equal = FALSE)
+outstate_ttest <- t.test(outstate_before$Age, outstate_after$Age, var.equal = FALSE)
+
+if (instate_ttest$p.value < 0.05) {
+  print("In-state residence had a statistically significant change before and after March 2020.")
+} else {
+  print("In-state residence did not have a statistically significant change before and after March 2020.")
+}
+
+instate_ttest$p.value
+
+outstate_ttest$p.value
+if (outstate_ttest$p.value < 0.05) {
+  print("Out-of-state residence had a statistically significant change before and after March 2020.")
+} else {
+  print("Out-of-state residence did not have a statistically significant change before and after March 2020.")
+}
+
+
+
+ggplot(age_by_year, aes(x = Year, y = )) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  ggtitle("Average Age by Year") +
+  xlab("Year") +
+  ylab("Average Age")
+
+
+
+
+
+```
+
+
+```{r}
+```{r setup, include=TRUE}
+read_excel("Untitled spreadsheet (1).xlsx")
+data<-Untitled_spreadsheet_1_
+
+
+attach(data)
+as.numeric(Age)
+na.omit(Age)
+ages<-data$Age
+age_groups(ages, c(20, 50))
+age_groups(ages, split_at = "fives", na.rm = TRUE)
+
+
+data %>% 
+  ggplot(aes(x = Age)) +
+    geom_bar()
+```
+
+
+```{r, include=TRUE}
+library(dplyr)
+library(tidyr)
+
+# Group by age, gender, and solo status
+counts <- df %>% 
+  group_by(Age, Gender, Solo) %>% 
+  summarize(count = n()) %>% 
+  ungroup()
+
+# Calculate the total count of individuals in each age and gender group
+totals <- counts %>% 
+  group_by(Age, Gender) %>% 
+  summarize(total = sum(count)) %>% 
+  ungroup()
+table(totals)
+
+
+#
+# aggregate data by activity, calculating average age and gender distribution
+table <- df %>%
+  group_by(Activity) %>%
+  summarize(
+    mean_age = mean(Age, na.rm = TRUE),
+    male_pct = mean(Gender == "Male", na.rm = TRUE) * 100,
+    female_pct = mean(Gender == "Female", na.rm = TRUE) * 100
+  ) %>%
+  ungroup()
+
+# format percentage columns
+attach(data)
+data$male_pct <- paste0(format(data$male_pct, digits = 3), "%")
+data$female_pct <- paste0(format(data$female_pct, digits = 3), "%")
+
+# print table
+table(data$male_pct)
+
+
+# Calculate the percentage of individuals who are solo travelers or living with others
+table <- counts %>% 
+  left_join(totals, by = c("Age", "Gender")) %>% 
+  mutate(percent = count / total * 100) %>% 
+  pivot_wider(names_from = Activity, values_from = percent))
+
+table <- counts %>% 
+  left_join(totals, by = c("Age", "Gender")) %>% 
+  mutate(percent = count / total * 100) %>% 
+  pivot_wider(names_from = Solo, values_from = percent, names_prefix = paste(c("Solo", "Status"), collapse = "_"))
+
+
+table <- counts %>% 
+  left_join(totals, by = c("Age", "Gender")) %>% 
+  mutate(percent = count / total * 100) %>% 
+  pivot_wider(names_from = Solo, values_from = percent, names_sep = "_")
+
+
+
+
+# Print the table
+print(table)
+
+```
+```{r}
+
+```
+
+```{r}
+df<-data
+
+counts <- df %>% 
+  group_by(Age, Gender, Solo) %>% 
+  summarize(count = n(), .groups = "drop") %>% 
+  ungroup()
+
+
+na.omit(df)
+
+
+table <- counts %>% 
+  pivot_wider(names_from = Solo, values_from = count, names_prefix = "Solo", values_fill = 0)
+
+
+
+
+ggplot(df, aes(x = Residence)) +
+  geom_bar() +
+  labs(title = "Count by Residence", x = "Residence", y = "Count")
+
+na.omit(df$Gender)
+ggplot(df, aes(x = Gender)) +
+  geom_bar() +
+  labs(title = "Gender", x = "Gender", y = "Count")
+
+
+
+before_counts <- before %>% group_by(Year, Residence_State) %>% summarise(count = n())
+after_counts <- after %>% group_by(Year, Residence_State) %>% summarise(count = n())
+
+# Combine before and after counts into one data frame
+counts <- rbind(before_counts, after_counts)
+
+# Create bar graph
+ggplot(counts, aes(x = Year, y = count, fill = Residence_State)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Year", y = "Count", fill = "Residence State") +
+  scale_fill_manual(values = c("blue", "red"), labels = c("Out-of-State", "In-State")) +
+  ggtitle("In-State vs Out-of-State Residence Over Time")
+```
+
+
+```{r}
+data$Season <- case_when(
+  month(data$Date) %in% c(12, 1, 2) ~ "Winter",
+  month(data$Date) %in% c(3, 4, 5) ~ "Spring",
+  month(data$Date) %in% c(6, 7, 8) ~ "Summer",
+  month(data$Date) %in% c(9, 10, 11) ~ "Fall"
+)
+
+# Create bar plot of season by year
+ggplot(data, aes(x = Year, fill = Season)) +
+  geom_bar(position = "dodge") +
+  labs(x = "Year", y = "Count", fill = "Season")
+
+
+counts <- table(data$Season, data$Date < as.Date("2020-03-01"))
+
+# Perform a chi-squared test on the contingency table
+chi_squared <- chisq.test(counts)
+
+# Print test results
+cat("Chi-squared test results:")
+print(chi_squared)
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
